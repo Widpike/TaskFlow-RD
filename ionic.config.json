@@ -1,0 +1,7 @@
+{
+  "name": "tareas-pro",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

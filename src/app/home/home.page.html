@@ -1,0 +1,266 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Tareas Pendientes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <div class="resumen">
+    <div class="tarjeta-resumen">
+      <h3>Pendientes</h3>
+      <p>{{ tareasPendientes.length }}</p>
+    </div>
+    <div class="tarjeta-resumen">
+      <h3>Completadas</h3>
+      <p>{{ tareasCompletadas.length }}</p>
+    </div>
+  </div>
+
+  <div class="buscador-simple">
+    <input
+      type="text"
+      [(ngModel)]="textoBusqueda"
+      placeholder="Buscar tarea o categoría..."
+      class="input-busqueda">
+  </div>
+
+  <div class="filtros">
+    <div class="titulo-filtro">
+      <ion-icon name="funnel-outline"></ion-icon>
+      <span>Filtrar por prioridad</span>
+    </div>
+
+    <div class="chips-filtro">
+      <button class="chip" [class.activo]="filtroActual === 'Todas'" (click)="cambiarFiltro('Todas')">
+        Todas
+      </button>
+      <button class="chip alta" [class.activo]="filtroActual === 'Alta'" (click)="cambiarFiltro('Alta')">
+        Alta
+      </button>
+      <button class="chip media" [class.activo]="filtroActual === 'Media'" (click)="cambiarFiltro('Media')">
+        Media
+      </button>
+      <button class="chip baja" [class.activo]="filtroActual === 'Baja'" (click)="cambiarFiltro('Baja')">
+        Baja
+      </button>
+    </div>
+  </div>
+
+  <div class="ordenador">
+    <div class="titulo-filtro">
+      <ion-icon name="pricetag-outline"></ion-icon>
+      <span>Filtrar por categoría</span>
+    </div>
+
+    <select class="select-nativo" [(ngModel)]="filtroCategoriaActual">
+      <option value="Todas">Todas</option>
+      <option value="Personal">Personal</option>
+      <option value="Trabajo">Trabajo</option>
+      <option value="Estudio">Estudio</option>
+      <option value="Compras">Compras</option>
+    </select>
+  </div>
+
+  <div class="ordenador">
+    <div class="titulo-filtro">
+      <ion-icon name="swap-vertical-outline"></ion-icon>
+      <span>Ordenar tareas</span>
+    </div>
+
+    <select class="select-nativo" [(ngModel)]="ordenActual">
+      <option value="recientes">Más recientes</option>
+      <option value="antiguas">Más antiguas</option>
+      <option value="alta-primero">Prioridad alta primero</option>
+      <option value="baja-primero">Prioridad baja primero</option>
+    </select>
+  </div>
+
+  <div *ngIf="tareas.length === 0" class="mensaje-vacio">
+    No tienes tareas registradas.
+  </div>
+
+  <div *ngIf="tareasPendientes.length > 0">
+    <h2 class="titulo-seccion">Pendientes</h2>
+
+    <ion-list #listaPendientes>
+      <ion-item-sliding
+        *ngFor="let tarea of tareasPendientes"
+        #slidingItem>
+        <ion-item
+          (pointerdown)="onPressStart($event, tarea, slidingItem)"
+          (pointermove)="onPressMove($event)"
+          (pointerup)="onPressEnd()"
+          (pointercancel)="onPressEnd()"
+          (pointerleave)="onPressEnd()">
+          <div class="barra-prioridad" [ngClass]="obtenerClasePrioridad(tarea.prioridad)"></div>
+
+          <ion-label>
+            <h2>{{ tarea.titulo }}</h2>
+            <p>Prioridad: <strong>{{ tarea.prioridad }}</strong></p>
+            <p>Categoría: <strong>{{ tarea.categoria }}</strong></p>
+            <p>{{ obtenerDescripcionPrioridad(tarea.prioridad) }}</p>
+
+            <div class="fecha-hora" *ngIf="tarea.fecha || tarea.hora">
+              <span *ngIf="tarea.fecha">
+                <ion-icon name="calendar-outline"></ion-icon>
+                {{ tarea.fecha }}
+              </span>
+              <span *ngIf="tarea.hora">
+                <ion-icon name="time-outline"></ion-icon>
+                {{ tarea.hora }}
+              </span>
+            </div>
+
+            <p class="texto-editar">Mantén pulsado para editar</p>
+          </ion-label>
+        </ion-item>
+
+        <ion-item-options side="start">
+          <ion-item-option color="success" expandable (click)="completarTarea(tarea)">
+            <ion-icon name="checkmark-done"></ion-icon>
+            Completar
+          </ion-item-option>
+        </ion-item-options>
+
+        <ion-item-options side="end">
+          <ion-item-option color="danger" expandable (click)="eliminarTarea(tarea.id)">
+            <ion-icon name="trash"></ion-icon>
+            Eliminar
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </div>
+
+  <div *ngIf="tareasCompletadas.length > 0">
+    <div class="encabezado-completadas">
+      <h2 class="titulo-seccion">Completadas</h2>
+      <ion-button size="small" color="danger" fill="outline" (click)="eliminarCompletadas()">
+        Borrar completadas
+      </ion-button>
+    </div>
+
+    <ion-list #listaCompletadas>
+      <ion-item-sliding *ngFor="let tarea of tareasCompletadas" #slidingItemCompletada>
+        <ion-item
+          class="completada"
+          (pointerdown)="onPressStart($event, tarea, slidingItemCompletada)"
+          (pointermove)="onPressMove($event)"
+          (pointerup)="onPressEnd()"
+          (pointercancel)="onPressEnd()"
+          (pointerleave)="onPressEnd()">
+          <div class="barra-prioridad" [ngClass]="obtenerClasePrioridad(tarea.prioridad)"></div>
+
+          <ion-label>
+            <h2>{{ tarea.titulo }}</h2>
+            <p>Prioridad: <strong>{{ tarea.prioridad }}</strong></p>
+            <p>Categoría: <strong>{{ tarea.categoria }}</strong></p>
+            <p>{{ obtenerDescripcionPrioridad(tarea.prioridad) }}</p>
+
+            <div class="fecha-hora" *ngIf="tarea.fecha || tarea.hora">
+              <span *ngIf="tarea.fecha">
+                <ion-icon name="calendar-outline"></ion-icon>
+                {{ tarea.fecha }}
+              </span>
+              <span *ngIf="tarea.hora">
+                <ion-icon name="time-outline"></ion-icon>
+                {{ tarea.hora }}
+              </span>
+            </div>
+
+            <p class="texto-editar">Mantén pulsado para editar</p>
+          </ion-label>
+        </ion-item>
+
+        <ion-item-options side="start">
+          <ion-item-option color="warning" expandable (click)="restaurarTarea(tarea)">
+            <ion-icon name="arrow-undo"></ion-icon>
+            Restaurar
+          </ion-item-option>
+        </ion-item-options>
+
+        <ion-item-options side="end">
+          <ion-item-option color="danger" expandable (click)="eliminarTarea(tarea.id)">
+            <ion-icon name="trash"></ion-icon>
+            Eliminar
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </div>
+
+  <div
+    *ngIf="tareas.length > 0 && tareasPendientes.length === 0 && tareasCompletadas.length === 0"
+    class="mensaje-vacio">
+    No hay tareas para la búsqueda o filtro seleccionado.
+  </div>
+
+  <button class="fab-nativo" (click)="abrirModal()">+</button>
+
+  <div class="overlay" *ngIf="mostrarModal">
+    <div class="modal-tarea">
+      <div class="modal-header">
+        <h2>{{ modoEdicion ? 'Editar tarea' : 'Nueva tarea' }}</h2>
+        <button class="btn-cerrar" (click)="cerrarModal()">×</button>
+      </div>
+
+      <div class="input-item-native">
+        <input
+          type="text"
+          [(ngModel)]="nuevaTarea"
+          placeholder="Escribe la tarea"
+          class="input-tarea-native" />
+      </div>
+
+      <div class="seccion-prioridad">
+        <div class="titulo-prioridad">
+          <ion-icon name="flag"></ion-icon>
+          <span>Selecciona la prioridad</span>
+        </div>
+
+        <div class="opciones-prioridad">
+          <div class="opcion prioridad-alta-card" [class.activa]="prioridadSeleccionada === 'Alta'" (click)="prioridadSeleccionada = 'Alta'">
+            <h3>Alta</h3>
+            <p>Urgente e importante</p>
+          </div>
+
+          <div class="opcion prioridad-media-card" [class.activa]="prioridadSeleccionada === 'Media'" (click)="prioridadSeleccionada = 'Media'">
+            <h3>Media</h3>
+            <p>Importante, pero no urgente</p>
+          </div>
+
+          <div class="opcion prioridad-baja-card" [class.activa]="prioridadSeleccionada === 'Baja'" (click)="prioridadSeleccionada = 'Baja'">
+            <h3>Baja</h3>
+            <p>Puede hacerse después</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="seccion-categoria">
+        <div class="titulo-prioridad">
+          <ion-icon name="pricetag-outline"></ion-icon>
+          <span>Selecciona la categoría</span>
+        </div>
+
+        <select class="select-nativo" [(ngModel)]="categoriaSeleccionada">
+          <option value="Personal">Personal</option>
+          <option value="Trabajo">Trabajo</option>
+          <option value="Estudio">Estudio</option>
+          <option value="Compras">Compras</option>
+        </select>
+      </div>
+
+      <div class="acciones-modal">
+        <ion-button fill="outline" color="medium" (click)="cerrarModal()">
+          Cancelar
+        </ion-button>
+
+        <ion-button (click)="guardarTarea()">
+          {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+</ion-content>
